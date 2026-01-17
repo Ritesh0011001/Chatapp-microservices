@@ -6,7 +6,7 @@ let channel: ampq.Channel;
 export const connectRabbitMQ = async () => {
   try {
     const connection = await ampq.connect({
-      protocol:"ampq",
+      protocol:"amqp",
       hostname:process.env.Rabbitmq_Host,
       port:5672,
       username:process.env.Rabbitmq_Username,
