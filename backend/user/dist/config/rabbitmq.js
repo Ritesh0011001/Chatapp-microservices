@@ -1,9 +1,9 @@
-import ampq from 'amqplib';
+import amqp from 'amqplib';
 import { connect } from 'mongoose';
 let channel;
 export const connectRabbitMQ = async () => {
     try {
-        const connection = await ampq.connect({
+        const connection = await amqp.connect({
             protocol: "amqp",
             hostname: process.env.Rabbitmq_Host,
             port: 5672,
