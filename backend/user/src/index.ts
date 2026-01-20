@@ -18,7 +18,9 @@ export const redisClient = createClient({
 
 redisClient.connect().then(()=>console.log("connected to redis")).catch(console.error)
 
-const app = express()
+const app = express();
+app.use(express.json())
+
 
 app.use("api/v1",UserRoutes)
 
