@@ -22,7 +22,7 @@ const app = express();
 app.use(express.json())
 
 
-app.use("api/v1",UserRoutes)
+app.use("/api/v1",UserRoutes)
 
 const port = process.env.PORT;
 
