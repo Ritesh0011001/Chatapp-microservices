@@ -19,7 +19,7 @@ export const loginUser = TryCatch(async (req,res) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const otpKey =  `otp:${email}`
 
-  await redisClient.set(otp,otpKey,{
+  await redisClient.set(otpKey,otp,{
     EX:300
   });
   await redisClient.set(rateLimitKey,"true", {
@@ -67,7 +67,7 @@ export const verifyUser = TryCatch(async (req,res) => {
   let user = await User.findOne({email})
 
   if(!user){
-    const name = email.slice(0,8)
+    const name = email.slice(0,6)
     user = await User.create({name,email})
   }
   const token =  generateToken(user)
