@@ -1,7 +1,9 @@
+import type { NextFunction, Response } from "express";
 import { generateToken } from "../config/generateToken.js";
 import { publishToQueue } from "../config/rabbitmq.js";
 import TryCatch from "../config/TryCatch.js";
 import { redisClient } from "../index.js";
+import type { AuthenticatedRequest } from "../middleware/isAuth.js";
 import { User } from "../model/User.js";
 
 export const loginUser = TryCatch(async (req,res) => {
@@ -80,3 +82,10 @@ export const verifyUser = TryCatch(async (req,res) => {
 
 
 });
+
+export  const myProfile = TryCatch(async (req:AuthenticatedRequest, res:Response, next:NextFunction) => {
+  const user  = req.user;
+
+  res.json(user)
+  
+})
