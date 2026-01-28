@@ -80,14 +80,52 @@ export const getAllChats = TryCatch(async (req:AuthenticatedRequest,res) => {
               ...chat.toObject(),
               latestMessage: chat.latestMessage || null,
               unseenCount,
-        }
-       }
-      }
-    })
-  );
+              }
+            }
+         }
+      })
+    );
    
-  res.json({
-    chats:chatWithUserData
-  });
+    res.json({
+       chats:chatWithUserData
+   });
   
 });
+
+
+export const sendMessage = TryCatch(async (req:AuthenticatedRequest,res) => {
+
+  const senderId = req.user?._id
+  const {chatId ,text} = req.body;
+  const imageFile = req.file
+
+  if(!senderId){
+    res.status(401).json({
+      message:"Unauthorized"
+    })
+    return ;
+  }
+  if(!chatId){
+    res.status(400).json({
+      message:"ChatId Required"
+    })
+    return ;
+  }
+  if(!text && !imageFile){
+    res.status(400).json({
+      message:"Either text or image required"
+    })
+    return ;
+  }
+
+  const chat = await Chat.findById(chatId)
+
+  if(!chat){
+    res.status(404).json({
+      message:"Chat not found"
+    })
+    return ;
+  }
+
+  
+})
