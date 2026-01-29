@@ -7,7 +7,7 @@ export interface IChat extends Document {
     sender:string;
   }
   createdAt : Date;
-  uodatedAt : Date;
+  updatedAt : Date;
 
 }
 
