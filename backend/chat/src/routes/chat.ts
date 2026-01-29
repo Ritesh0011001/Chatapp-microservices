@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.post('/chat/new',isAuth,createNewChat)
 router.get('/chat/all',isAuth,getAllChats)
-router.post('/mesage',isAuth,upload.single("image"),sendMessage)
+router.post('/message',isAuth,upload.single("image"),sendMessage)
 
 export default router;

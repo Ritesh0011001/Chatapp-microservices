@@ -123,9 +123,73 @@ export const sendMessage = TryCatch(async (req:AuthenticatedRequest,res) => {
   if(!chat){
     res.status(404).json({
       message:"Chat not found"
-    })
+    });
     return ;
   }
 
-  
+  const isUserInChat = chat.users.some(
+    (userId)=> userId.toString() === senderId.toString()
+  );
+
+  if(!isUserInChat){
+    res.status(403).json({
+      message:"You are not a participant of this chat"
+    });
+    return;
+  }
+
+  const otherUserId = chat.users.find(
+    (userId) => userId.toString() !== senderId.toString()
+  );
+
+  if(!otherUserId){
+    res.status(401).json({
+      message:"Not a user"
+    });
+    return;
+  }
+
+  //Socket Setup
+
+  let messageData : any  = {
+    chatId : chatId,
+    sender:senderId,
+    seen: false,
+    seenAt:undefined
+  }
+
+  if(imageFile){
+    messageData.image ={
+      url:imageFile.path,
+      publicId:imageFile.filename
+    };
+    messageData.messageType = "image"
+    messageData.text = text || "";;
+  }else{
+    messageData.text= text;
+    messageData.messageType = text;
+  }
+
+  const message = new Messages();
+
+  const savedMesage = await message.save();
+
+  const latestMessageText = imageFile? "📷 image": text;
+
+  await Chat.findByIdAndUpdate(chatId,{
+    latestMessage:{
+      text:latestMessageText,
+      sender:senderId
+    },
+    updatedAt:new Date()
+  },{new:true}
+);
+
+//emit to sockets
+
+  res.status(201).json({
+    message:savedMesage,
+    sender:senderId
+  })
+ 
 })
