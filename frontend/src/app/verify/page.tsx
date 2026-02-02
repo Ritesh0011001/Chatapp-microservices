@@ -1,7 +1,9 @@
 "use client"
+import axios from 'axios'
 import { ArrowRight, Loader2, Lock } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
-import React, { useState } from 'react'
+import Cookies from "js-cookie"
+import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useEffect, useRef, useState } from 'react'
 
 const verifyPage = () => {
    const [loading,setLoading]=useState(false);
@@ -10,13 +12,102 @@ const verifyPage = () => {
   const [resendLoading,setResendLoading]= useState(false);
   const [timer,setTimer]= useState(60);
 
-
-   const handleSubmit = async()=>{}
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([])
+  const Router = useRouter();
 
    const searchParams = useSearchParams();
 
-   const email: string = searchParams.get("email") || ""
+   const email: string = searchParams.get("email") || "";
 
+   useEffect(()=>{
+    if(timer>0){
+      const interval = setInterval(()=>{
+        setTimer((prev)=>prev-1)
+      },1000);
+      return ()=> clearInterval(interval)
+    }
+   },[timer]);
+
+   const handleInputChange = (index:number , value:string): void =>{
+    if(value.length>1)return;
+    const newOtp =[...otp]
+    newOtp[index]=value
+    setOtp(newOtp)
+    setError("")
+
+    if (value && index < 5){
+      inputRefs.current[index+1]?.focus();
+    }
+   };
+
+   const handleKeyDown = (index:number, e:React.KeyboardEvent<HTMLElement>):void=>{
+    if(e.key === "Backspace" && !otp[index] && index>0)[
+      inputRefs.current[index-1]?.focus()
+    ]
+   };
+
+   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>): void=>{
+    e.preventDefault()
+    const pastedDated =e.clipboardData.getData("text");
+    const digits = pastedDated.replace(/\D/g,"").slice(0,6);
+    if(digits.length === 6){
+      const newOtp = digits.split("")
+      setOtp(newOtp)
+      inputRefs.current[5]?.focus()
+    }
+   }
+const handleSubmit = async(e:React.FormEvent<HTMLFormElement>)=>{
+    e.preventDefault();
+    const otpString = otp.join("")
+    if(otpString.length !== 6){
+      setError("Please Enter your all 6 digits")
+      return;
+    }
+
+    setError("")
+    setLoading(true)
+
+    try {
+      const {data}= await axios.post(`http://localhost:5000/api/v1/verify`,{
+        email,
+        otp:otpString
+      });
+      alert(data.message)
+      Cookies.set("token",data.token, {
+        expires:15,
+        secure:false,
+        path:"/"
+      });
+      setOtp(["", "", "", "", "", ""])
+      inputRefs.current[0]?.focus()
+      
+    } catch (error:any) {
+      setError(error.response.data.message)
+    }
+    finally{
+      setLoading(false)
+    }
+
+   };
+
+   const handleResendOtp = async()=>{
+    setResendLoading(true)
+    setError("")
+
+    try {
+
+      const {data} = await axios.post(`http://localhost:5000/api/v1/login`,{email})
+      alert(data.message)
+      setTimer(60)
+      
+    } catch (error : any) {
+      setError(error.response.data.message)
+      
+    }
+    finally{
+      setResendLoading(false)
+    }
+   }
 
   return (
     <div className='min-h-screen bg-gray-900 flex items-center justify-center p-4'>
@@ -32,12 +123,35 @@ const verifyPage = () => {
           </div>
           <form onSubmit={handleSubmit} className='space-y-6'>
             <div>
-              <label htmlFor="email" className='block text-sm font-medium text-gray-300 mb-2'>Email Address</label>
-              { <input type="email" id='email' className='w-full px-4 py-4 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 ' placeholder='Enter your email address' 
-              // value={email} onChange={(e)=>setEmail(e.target.value)} 
-              required /> }
+              <label className='block text-sm font-medium text-gray-300 mb-4 text-center'>Enter your 6 digit OTP here</label>
+              <div className="flex justify-center gap-1.5 in-checked:space-x-3">
+                {
+                  otp.map((digit,index)=>(
+                    <input
+                     key={index} 
+                    ref={(el:HTMLInputElement | null)=>{
+                      inputRefs.current[index]=el; 
+
+                    }}
+                    type='text'
+                    maxLength={1}
+                    value={digit}
+                    onChange={e=> handleInputChange(index,e.target.value)}
+                    onKeyDown={e => handleKeyDown(index,e)}
+                    onPaste={index === 0 ? handlePaste : undefined}
+                    className='w-12 h-12 text-center text-xl font-bold border-2 border-gray-600 rounded-lg bg-gray-700 text-white'
+                    />
+
+                  ))
+                }
+              </div>
             </div>
-            <button type='submit' className='w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-blue-700 disbaled:opacity-50 disabled:cursor-not-allowed' disabled={loading}>
+            {
+              error && (<div className="bg-red-900 border border-red-700 rounded-lg p-3">
+                <div className="text-red-300 text-sm text-center">{error}</div>
+              </div>
+            )}
+            <button type='submit' className='w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold hover:bg-blue-700 disbaled:opacity-50 disabled:cursor-not-allowed' disabled={loading} >
               {
                 loading? <div className='flex items-center justify-center gap-2' >
                   <Loader2 className='w-5 h-5'/>
@@ -52,6 +166,13 @@ const verifyPage = () => {
                
               </button>
           </form>
+          <div className="mt-6 text-center">
+            <p className='text-gray-400 text-sm mb-4'>Didn't receive the code ?</p>
+            {
+              timer>0 ? <div className="text-gray-400 text-sm">Resend code in {timer} seconds</div> : <button className='text-blue-400 hover:text-blue-300 font-medium text-sm
+              disabled:opacity-50' disabled={resendLoading} onClick={handleResendOtp}>{resendLoading?"Sending...":"Resend Code "}</button>
+            }
+          </div>
         </div>
       </div>
     </div>
