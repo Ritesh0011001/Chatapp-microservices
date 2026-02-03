@@ -4,6 +4,7 @@ import { ArrowRight, ChevronLeft, Loader2, Lock } from 'lucide-react'
 import Cookies from "js-cookie"
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
+import { user_service } from '@/context/AppContext'
 
 const verifyPage = () => {
    const [loading,setLoading]=useState(false);
@@ -68,7 +69,7 @@ const handleSubmit = async(e:React.FormEvent<HTMLFormElement>)=>{
     setLoading(true)
 
     try {
-      const {data}= await axios.post(`http://localhost:5000/api/v1/verify`,{
+      const {data}= await axios.post(`${user_service}/api/v1/verify`,{
         email,
         enteredOtp:otpString
       });
@@ -96,7 +97,7 @@ const handleSubmit = async(e:React.FormEvent<HTMLFormElement>)=>{
 
     try {
 
-      const {data} = await axios.post(`http://localhost:5000/api/v1/login`,{email})
+      const {data} = await axios.post(`${user_service}/api/v1/login`,{email})
       alert(data.message)
       setTimer(60)
       
